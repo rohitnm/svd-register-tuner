@@ -1,0 +1,230 @@
+{
+  "name": "reghud",
+  "displayName": "SVD Register Tuner",
+  "description": "Interactive register bit-field viewer and C code generator for embedded development.",
+  "version": "0.1.0",
+  "author": "Rohit Mehta",
+  "publisher": "rohitmehta",
+  "license": "MIT",
+  "icon": "media/reghud-display-icon-128.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rohitnm/svd-register-tuner"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "embedded",
+    "register",
+    "bitfield",
+    "SVD",
+    "CMSIS",
+    "STM32",
+    "ARM",
+    "firmware",
+    "microcontroller"
+  ],
+  "activationEvents": [
+    "onLanguage:c",
+    "onLanguage:cpp",
+    "workspaceContains:**/*.svd",
+    "workspaceContains:platformio.ini",
+    "workspaceContains:**/*.ioc"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "reghud",
+          "title": "SVD Register Tuner",
+          "icon": "media/reghud-activity-icon.png"
+        }
+      ]
+    },
+    "views": {
+      "reghud": [
+        {
+          "type": "webview",
+          "id": "regHud.hudView",
+          "name": "SVD Register Tuner",
+          "contextualTitle": "SVD Register Tuner"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "regHud.togglePanel",
+        "title": "Toggle Panel",
+        "category": "SVD Register Tuner"
+      },
+      {
+        "command": "regHud.pinRegister",
+        "title": "Pin Current Register",
+        "category": "SVD Register Tuner",
+        "icon": "$(pin)"
+      },
+      {
+        "command": "regHud.unpinRegister",
+        "title": "Unpin Register",
+        "category": "SVD Register Tuner",
+        "icon": "$(pinned)"
+      },
+      {
+        "command": "regHud.selectDevice",
+        "title": "Select Target Device",
+        "category": "SVD Register Tuner"
+      },
+      {
+        "command": "regHud.decodeValue",
+        "title": "Decode Hex Value",
+        "category": "SVD Register Tuner"
+      },
+      {
+        "command": "regHud.refreshMetadata",
+        "title": "Reload Device Metadata",
+        "category": "SVD Register Tuner",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "regHud.copyCode",
+        "title": "Copy Generated Code",
+        "category": "SVD Register Tuner"
+      },
+      {
+        "command": "regHud.insertCode",
+        "title": "Insert Code at Cursor",
+        "category": "SVD Register Tuner"
+      },
+      {
+        "command": "regHud.switchCodeStyle",
+        "title": "Switch Code Generation Style",
+        "category": "SVD Register Tuner"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "regHud.togglePanel",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "editorTextFocus && editorLangId =~ /^(c|cpp)$/"
+      }
+    ],
+    "configuration": {
+      "title": "SVD Register Tuner",
+      "properties": {
+        "regHud.device": {
+          "type": "string",
+          "default": "",
+          "description": "Target MCU device identifier (e.g. STM32F407VG). Leave empty for auto-detection.",
+          "order": 1
+        },
+        "regHud.svdPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to SVD file. Relative to workspace root or absolute.",
+          "order": 2
+        },
+        "regHud.codeStyle": {
+          "type": "string",
+          "default": "rmw",
+          "enum": ["raw", "rmw", "cmsis", "commented"],
+          "enumDescriptions": [
+            "Direct full register write",
+            "Read-modify-write (preserves other bits)",
+            "CMSIS MODIFY_REG / SET_BIT macros",
+            "Read-modify-write with field comments"
+          ],
+          "description": "Default code generation style.",
+          "order": 3
+        },
+        "regHud.autoFollow": {
+          "type": "boolean",
+          "default": true,
+          "description": "HUD automatically follows cursor to detect register expressions.",
+          "order": 4
+        },
+        "regHud.debounceMs": {
+          "type": "number",
+          "default": 250,
+          "minimum": 50,
+          "maximum": 2000,
+          "description": "Debounce delay (ms) before resolving register after cursor movement.",
+          "order": 5
+        },
+        "regHud.showComments": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include explanatory comments in generated code.",
+          "order": 6
+        },
+        "regHud.showResetValue": {
+          "type": "boolean",
+          "default": true,
+          "description": "Display register reset value in the HUD header.",
+          "order": 7
+        },
+        "regHud.cacheMaxMb": {
+          "type": "number",
+          "default": 100,
+          "minimum": 10,
+          "maximum": 1000,
+          "description": "Maximum cache size in MB for parsed device metadata.",
+          "order": 8
+        }
+      }
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "regHud.pinRegister",
+          "when": "view == regHud.hudView && !regHud.isPinned",
+          "group": "navigation"
+        },
+        {
+          "command": "regHud.unpinRegister",
+          "when": "view == regHud.hudView && regHud.isPinned",
+          "group": "navigation"
+        },
+        {
+          "command": "regHud.refreshMetadata",
+          "when": "view == regHud.hudView",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && node esbuild.config.mjs",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.config.mjs --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && node esbuild.config.mjs --production",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/ --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/test-electron": "^2.3.8",
+    "esbuild": "^0.19.11",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^4.3.3"
+  }
+}
